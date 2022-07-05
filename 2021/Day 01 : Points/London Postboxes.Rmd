@@ -1,0 +1,72 @@
+# Day 01 : Points (London Postboxes)
+
+```{r}
+library(osmdata)
+library(sf)
+
+# boundary box
+coords <- matrix(c(-0.6, 0.35, 51.22, 51.75), # org: -0.8, 0.5, 51.2, 51.75
+                 byrow = TRUE, nrow = 2, ncol = 2, 
+                 dimnames = list(c('x','y'),c('min','max'))) 
+
+location <- coords %>% opq()
+
+# postbox data
+postbox <- 
+location %>%
+   add_osm_feature(key = "amenity", value = "post_box") %>%
+   osmdata_sf()
+
+highway <- location %>%
+  add_osm_feature(key = "highway", 
+                  value = c("motorway", "primary", "motorway_link", "primary_link")) %>%
+  osmdata_sf()
+
+streets <-location %>%
+  add_osm_feature(key = "highway", value = c("residential", "living_street")) %>%
+  osmdata_sf()
+
+```
+
+```{r}
+
+library(showtext); showtext_auto()
+font_add_google("Righteous", "righteous")
+font_add_google("Saira" , "saira")
+
+library(stringr)
+
+text <- str_wrap('The advent of the British wayside letter box can be traced to Sir Rowland Hill, Secretary of the Post Office, and his Surveyor for the Western District, and noted novelist, Anthony Trollope. Hill sent Trollope to the Channel Islands to ascertain what could be done about the problem of collecting the mail on a pair of islands. The problems identified in the Channel Islands were caused by the irregular sailing times of the Royal Mail packet boats serving the islands due to weather and tides. Trollope subsequently arrived in Jersey in the early Spring of 1852 and proceeded to survey both islands. His recommendation back to Hill was to employ a device he may have seen in use in Paris: a "letter-receiving pillar".', width = 100)
+
+library(ggplot2)
+
+# lnd map
+plot_lnd_pb <-
+ggplot() +
+  geom_sf(data = chartchallenge::lnd_shp, fill = "white", color = "#41424C", alpha = 0.8) +
+  geom_sf(data = streets$osm_lines, inherit.aes = FALSE,
+          color = "#ADADC9", size = .6, alpha = .7) +
+  geom_sf(data = highway$osm_lines, inherit.aes = FALSE,
+            color = "#787276", size = .6, alpha = .7) +
+  geom_sf(data = postbox$osm_points, 
+          color = "#df2a2a", size = 0.1, alpha = 0.8) +
+  theme_void() +
+  theme(plot.background  = element_rect(fill = "#41424C", color = "#41424C"),
+        panel.background = element_rect(fill = "#41424C", color = "#41424C"),
+        plot.margin = margin(0,0,4,0,unit = "cm"))
+
+library(cowplot)
+
+panel_lnd_pb <-
+ggdraw() +
+  draw_plot(plot_lnd_pb) +
+  draw_text("The London Postbox",                               x = 0.08 , y = 0.95,  hjust = 0, color = "white", size = 36*.pt, family = "righteous") +
+  draw_text("Data: Open Street Map | Graphic: @NearAndDistant", x = 0.08 , y = 0.915, hjust = 0, color = "white", size = 10*.pt, family = "righteous") +
+  draw_text(text,                                               x = 0.08 , y = 0.12,  hjust = 0, color = "white", size = 12*.pt, family = "saira")
+
+```
+
+#### Saving
+```{r}
+ggsave(plot = panel_lnd_pb, filename = here::here("2021/Day 01 : Points/D1_London_Postbox.png"), dpi = 360, height = 10.2, width = 8.75)
+```
